@@ -18,6 +18,7 @@ import { useState } from 'react';
 import registryAbi from "./abis/Registry.json";
 import propertyAbi from "./abis/Property.json";
 import env from "react-dotenv";
+import { Card, CardContent, CardMedia } from '@mui/material';
 
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -32,10 +33,45 @@ let ppt, registry;
 
 function App() {
 
+  const [courses, setCourses] = useState([{
+      title: "Java Masterclass",
+      description: "Learn Java from scratch",
+      surity: 17,
+      issuer: "0xc87bfce1697950331d60F6B141eA912A958A2024",
+      issuer_name: "Tim Buchaka",
+    },
+    {
+      title: "Data Structures & Algorithms",
+      description: "Learn Data Structures & Algorithms",
+      surity: 21,
+      issuer: "0xc87bfce1697950331d60F6B141eA912A958A2024",
+      issuer_name: "Tamara Kostova",
+    },
+    {
+      title: "Blockchain",
+      description: "Learn Blockchain",
+      surity: 0,
+      issuer: "0xc87bfce1697950331d60F6B141eA912A958A2024",
+      issuer_name: "BUET",
+    }
+  ]);
+
+  const [myCourses, setMyCourse] = useState([]);
+  const [myCertificate, setMyCertificate] = useState({
+    issuerName: "BUET",
+    ownerName: "Md. Jehadul Karim",
+    courseTitle: "Java Masterclass",
+    expireTs: 1659611125912,
+    verified: true
+  });
+  const [myCertificates, setMyCertificates] = useState([myCertificate]);
+
   const [account, setAccount] = useState("");
   const [balance, setBalance] = useState("");
   const [properties, setProperties] = useState(null);
   const [purchases, setPurchases] = useState(null);
+
+  const [page, setPage] = useState("certificates");
 
   const loadWeb3 = async () => {
     if (typeof window.ethereum !== "undefined") {
@@ -100,7 +136,167 @@ function App() {
       .then(console.log);
   };
 
+  const buyCourse = async (course) => {
+    setCourses(courses.filter(item => item.title !== course.title || item.issuer !== course.issuer));
+    setMyCourse([...myCourses, course]);
+    // TODO : Pay Surity for the course
+  }
+
+  const finishCourse = async (course) => {
+
+  }
+
+  const deadlineReached = async (course) => {
+
+  }
+
+  const extendDeadline = async (course) => {
+
+  }
+
   loadWeb3();
+
+  let content = null;
+
+  const certificateDOM = myCertificate ? <Container maxWidth="md" sx={{mb: 4}}>
+    <Card sx={{ maxWidth: 'lg' }}>
+      <CardMedia
+        component="img"
+        height="140"
+        image="https://149396518.v2.pressablecdn.com/wp-content/uploads/2018/08/coursera-social-logo.png"
+        alt="green iguana"
+      />
+      <CardContent>
+        <Typography gutterBottom variant="h3" component="div" style={{textAlign: 'right'}} color="text.secondary">
+          {myCertificate.issuerName}
+        </Typography>
+        <Typography gutterBottom variant="h2" component="div">
+          {myCertificate.ownerName}
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          has successfully completed
+        </Typography>
+        <Typography gutterBottom variant="h2" component="div">
+          {myCertificate.courseTitle}
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          An online non-credit course authorized by Coursera and offered by {myCertificate.issuerName}
+        </Typography>
+        {myCertificate.expireTs ? <Typography variant="subtitle1" color="text.secondary">Valid Until: {new Date(myCertificate.expireTs).toDateString()} </Typography> : null}
+        {!myCertificate.verified && <Typography variant="h6" color="text.secondary" style={{textAlign: 'right'}}>Unverified</Typography>}
+      </CardContent>
+    </Card>
+
+  </Container> : null;
+
+  if (page === "courses") {
+    content = (
+      <>
+      <Typography variant="h4" gutterBottom component="div" sx={{mb: 4}}>
+        Available Courses
+      </Typography>
+      <Container maxWidth="lg" sx={{mb: 4}}>
+        <Grid container spacing={3}>
+          {courses.map((course, index) => (
+            <Grid item xs={6}>
+              <Item>
+                <Typography variant="h5">{course.title}</Typography>
+                <Typography variant="body1">{course.description}</Typography>
+                <Typography variant="body1">Surity: {course.surity || 'None'}</Typography>
+                <Typography variant="body1" sx={{mb: 2}}>Course By: {course.issuer_name}</Typography>
+
+                <Button variant="contained" color="primary" onClick={() => buyCourse(course)}>Buy</Button>
+              </Item>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
+      <Typography variant="h4" gutterBottom component="div" sx={{mb: 4}}>
+        My Courses
+      </Typography>
+
+      <Container maxWidth="lg" sx={{mb: 4}}>
+        <Grid container spacing={3}>
+          {myCourses.map((course, index) => (
+            <Grid item xs={6}>
+              <Item>
+                <Typography variant="h5">{course.title}</Typography>
+                <Typography variant="body1">{course.description}</Typography>
+                <Typography variant="body1">Surity: {course.surity || 'None'}</Typography>
+                <Typography variant="body1" sx={{mb: 2}}>Course By: {course.issuer_name}</Typography>
+
+                <Button variant="contained" color="success" size='small' onClick={() => finishCourse(course)} sx={{my: 2}}>Finish</Button>
+                <Button variant="outlined" color="error" size='small' onClick={() => deadlineReached(course)} sx={{mx: 1}}>Deadline Over</Button>
+                <Button variant="outlined" color="warning" size='small' onClick={() => extendDeadline(course)} >Extend Deadline</Button>
+              </Item>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
+      {certificateDOM}
+
+      </>
+    );
+  } else if (page === 'certificates') {
+    content = <>
+      {myCertificate && <Container maxWidth="md" sx={{mb: 4}}>
+        <Card sx={{ maxWidth: 'lg' }}>
+          <CardMedia
+            component="img"
+            height="140"
+            image="https://149396518.v2.pressablecdn.com/wp-content/uploads/2018/08/coursera-social-logo.png"
+            alt="green iguana"
+          />
+          <CardContent>
+            <Typography gutterBottom variant="h3" component="div" style={{textAlign: 'right'}} color="text.secondary">
+              {myCertificate.issuerName}
+            </Typography>
+            <Typography gutterBottom variant="h2" component="div">
+              {myCertificate.ownerName}
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary">
+              has successfully completed
+            </Typography>
+            <Typography gutterBottom variant="h2" component="div">
+              {myCertificate.courseTitle}
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary">
+              An online non-credit course authorized by Coursera and offered by {myCertificate.issuerName}
+            </Typography>
+            {myCertificate.expireTs ? <Typography variant="subtitle1" color="text.secondary">Valid Until: {new Date(myCertificate.expireTs).toDateString()} </Typography> : null}
+            {!myCertificate.verified && <Typography variant="h6" color="text.secondary" style={{textAlign: 'right'}}>Unverified</Typography>}
+          </CardContent>
+        </Card>
+
+      </Container>}
+
+      <Typography variant="h4" gutterBottom component="div" sx={{my: 4}}>
+        My Certificates {myCertificate && <Button variant='outlined' color='warning' onClick={() => setMyCertificate(null)}>Close Preview</Button>}
+      </Typography>
+
+      <Container maxWidth="lg" sx={{mb: 4}}>
+        <Grid container spacing={3}>
+          {myCertificates.map((certificate, index) => (
+            <Grid item xs={6}>
+              <Item>
+                <Typography variant="h5">Course: {certificate.courseTitle}</Typography>
+                <Typography variant="body1">Offered By: {certificate.issuerName}</Typography>
+                <Typography variant="body1">Status: {certificate.verified ? 'Verified' : 'Unverified'}</Typography>
+                <Typography variant="body1" sx={{mb: 2}}>Expire: {new Date(certificate.expireTs).toDateString()}</Typography>
+
+                <Button variant="contained" color="success" size='small' onClick={() => setMyCertificate(certificate)}>View</Button>
+                {certificate.expireTs ? 
+                <Button variant="outlined" color="primary" size='small' onClick={() => {}} sx={{ml: 2}}>Renew Certificate</Button>
+                : null}
+              </Item>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </>
+  }
 
   return (
     <div className="App">
@@ -109,8 +305,12 @@ function App() {
         <AppBar position="static" style={{ marginBottom: "20px" }}>
           <Toolbar>
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Property DAPP
+              BeeCertify
             </Typography>
+
+            <Button color={"inherit"} variant={page === "courses" && "outlined"} onClick={() => setPage('courses')}>Courses</Button>
+            <Button color={"inherit"} variant={page === "certificates" && "outlined"} onClick={() => setPage('certificates')}>My Certificates</Button>
+            <Button color={"inherit"} variant={page === "verify" && "outlined"} onClick={() => setPage('verify')} sx={{mr: 2}}>Verify</Button>
 
             <p>
               account: { account.substring(0, 20) }... <br/>
@@ -122,10 +322,7 @@ function App() {
 
       <Container maxWidth="md">
 
-        <Typography variant="h4" gutterBottom component="div">
-          Available Properties
-        </Typography>
-        <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }}
+        {/* <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 2, sm: 3, md: 12 }}
           style={{ marginBottom: "20px" }}>
           {properties && properties.map((item, index) => item.owner !== account && (
             <Grid item xs={2} sm={4} md={4} key={index}>
@@ -143,9 +340,11 @@ function App() {
               </Item>
             </Grid>
           ))}
-        </Grid>
+        </Grid> */}
 
-        <Typography variant="h4" gutterBottom component="div">
+        {content}
+
+        {/* <Typography variant="h4" gutterBottom component="div">
           Owned Properties
         </Typography>
         <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }}
@@ -200,7 +399,7 @@ function App() {
               ))}
             </TableBody>
           </Table>
-        </TableContainer>
+        </TableContainer> */}
       </Container>
       </Box>
     </div>
