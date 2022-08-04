@@ -158,6 +158,37 @@ function App() {
 
   let content = null;
 
+  const certificateDOM = myCertificate ? <Container maxWidth="md" sx={{mb: 4}}>
+    <Card sx={{ maxWidth: 'lg' }}>
+      <CardMedia
+        component="img"
+        height="140"
+        image="https://149396518.v2.pressablecdn.com/wp-content/uploads/2018/08/coursera-social-logo.png"
+        alt="green iguana"
+      />
+      <CardContent>
+        <Typography gutterBottom variant="h3" component="div" style={{textAlign: 'right'}} color="text.secondary">
+          {myCertificate.issuerName}
+        </Typography>
+        <Typography gutterBottom variant="h2" component="div">
+          {myCertificate.ownerName}
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          has successfully completed
+        </Typography>
+        <Typography gutterBottom variant="h2" component="div">
+          {myCertificate.courseTitle}
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          An online non-credit course authorized by Coursera and offered by {myCertificate.issuerName}
+        </Typography>
+        {myCertificate.expireTs ? <Typography variant="subtitle1" color="text.secondary">Valid Until: {new Date(myCertificate.expireTs).toDateString()} </Typography> : null}
+        {!myCertificate.verified && <Typography variant="h6" color="text.secondary" style={{textAlign: 'right'}}>Unverified</Typography>}
+      </CardContent>
+    </Card>
+
+  </Container> : null;
+
   if (page === "courses") {
     content = (
       <>
@@ -203,6 +234,9 @@ function App() {
           ))}
         </Grid>
       </Container>
+
+      {certificateDOM}
+
       </>
     );
   } else if (page === 'certificates') {
