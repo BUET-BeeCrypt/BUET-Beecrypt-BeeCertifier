@@ -1,0 +1,228 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_issuerAccount",
+                "type": "address"
+            },
+            {
+                "internalType": "string",
+                "name": "_courseTitle",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_ownerName",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_issuerName",
+                "type": "string"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_expireTs",
+                "type": "uint256"
+            }
+        ],
+        "name": "addCertifcate",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_certContract",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "cid",
+                "type": "uint256"
+            }
+        ],
+        "name": "verify",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "cid",
+                "type": "uint256"
+            },
+            {
+                "internalType": "string",
+                "name": "_ownerName",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_issuerName",
+                "type": "string"
+            }
+        ],
+        "name": "checkVerified",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "cid",
+                "type": "uint256"
+            }
+        ],
+        "name": "getCertificate",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "issuer",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "courseTitle",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "ownerName",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "issuerName",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "expireTs",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "verified",
+                        "type": "bool"
+                    }
+                ],
+                "internalType": "struct Registry.CertificateInfo",
+                "name": "",
+                "type": "tuple"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getCertificates",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "issuer",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "courseTitle",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "ownerName",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "issuerName",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "expireTs",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "verified",
+                        "type": "bool"
+                    }
+                ],
+                "internalType": "struct Registry.CertificateInfo[]",
+                "name": "",
+                "type": "tuple[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "s1",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "s2",
+                "type": "string"
+            }
+        ],
+        "name": "strcmp",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+    }
+]

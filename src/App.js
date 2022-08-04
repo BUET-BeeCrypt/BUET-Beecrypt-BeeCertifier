@@ -15,10 +15,10 @@ import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
 import Web3 from "web3";
 import { useState } from 'react';
-import certificateAbi from "./abis/Registry.json";
-import registryAbi from "./abis/Certificate.json";
+import registerAbi from "./abis/Registry.json";
+import certifyAbi from "./abis/Certificate.json";
 import env from "react-dotenv";
-import { Card, CardContent, CardMedia } from '@mui/material';
+import { Card, CardContent, CardMedia, TextField } from '@mui/material';
 
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -29,7 +29,7 @@ const Item = styled(Paper)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-let registrySol, certificateSol;
+let certificateSol, registerSol;
 
 function App() {
 
@@ -65,7 +65,12 @@ function App() {
   const [account, setAccount] = useState("");
   const [balance, setBalance] = useState("");
 
-  const [page, setPage] = useState("courses");
+  const [verCertId, setVerCertId] = useState("")
+  const [verOwnerName, setVerOwnerName] = useState("")
+  const [verIssuerName, setVerIssuerName] = useState("")
+  const [verVerified, setVerVerified] = useState("")
+
+  const [page, setPage] = useState("verify");
 
   const loadWeb3 = async () => {
     if (typeof window.ethereum !== "undefined") {
@@ -96,8 +101,8 @@ function App() {
         // Access smart contracts
         //console.log(env.PROPERTY_CONTRACT_ADDRESS)
         //console.log(env.REGISTRY_CONTRACT_ADDRESS);
-        registrySol = new web3.eth.Contract(registryAbi, env.PROPERTY_CONTRACT_ADDRESS);
-        certificateSol = new web3.eth.Contract(certificateAbi, env.REGISTRY_CONTRACT_ADDRESS);
+        certificateSol = new web3.eth.Contract(certifyAbi, env.PROPERTY_CONTRACT_ADDRESS);
+        registerSol = new web3.eth.Contract(registerAbi, env.REGISTRY_CONTRACT_ADDRESS);
 
         getInitialData();
       }
@@ -113,11 +118,15 @@ function App() {
   const getInitialData = async () => {
     // Get list of properties & purchases
     try {
-      let wMyCertificates = await certificateSol.methods.getCertificates().call();
-      setMyCertificates(wMyCertificates);
+      let wMyCertificates = await registerSol.methods.getCertificates().call();
+      console.log(wMyCertificates)
+      // if (wMyCertificates.length === 1 && wMyCertificates[0].ownerName === "")
+      //   throw new Error("list empty");
+      setMyCertificates(wMyCertificates.filter(c => c.owner === account));
+      setUnapproved(wMyCertificates.filter(c => !c.verified && c.ownerName !== ""))
       const titles = myCertificates.map(c => c.courseTitle)
       setCourses(courses.filter(c => !(titles.includes(c.title))))
-      // console.log(wMyCertificates);
+      console.log(wMyCertificates);
     } catch (e) {
       console.log(e.message);
     }
@@ -130,18 +139,6 @@ function App() {
     // }))));
   }
 
-  const buyProperty = async (pid, price) => {
-    await certificateSol.methods.buyProperty(pid)
-      .send({ from: account, value: price, gas: 1e6 })
-      .then(console.log);
-  };
-
-  const setPropertyAvailability = async (pid, avl) => {
-    await certificateSol.methods.setPropertyAvailability(pid, avl)
-      .send({ from: account, gas: 1e6 })
-      .then(console.log);
-  };
-
   const buyCourse = async (course) => {
     setCourses(courses.filter(item => item.title !== course.title || item.issuer !== course.issuer));
     setMyCourses([...myCourses, course]);
@@ -149,7 +146,7 @@ function App() {
   }
 
   const finishCourse = async (course) => {
-    await certificateSol.methods.addCertifcate(course.issuer, course.title, "Masum", course.issuer_name, new Date().getTime() + 30 * 24 * 60 * 60 * 1000)
+    await registerSol.methods.addCertifcate(course.issuer, course.title, "Masum", course.issuer_name, new Date().getTime() + 30 * 24 * 60 * 60 * 1000)
       .send({ from: account, gas: 1e6 })
       .then(console.log)
     setMyCourses(myCourses.filter(c => c.title != course.title || c.issuer != course.issuer))
@@ -162,6 +159,12 @@ function App() {
 
   const extendDeadline = async (course) => {
 
+  }
+
+  const approveCertificate = async (cert) => {
+    await registerSol.methods.verify(cert.id)
+      .send({ from: account, gas: 1e6 })
+      .then(console.log)
   }
 
   loadWeb3();
@@ -184,7 +187,7 @@ function App() {
                   <Typography variant="body1">Surity: {course.surity || 'None'}</Typography>
                   <Typography variant="body1" sx={{ mb: 2 }}>Course By: {course.issuer_name}</Typography>
 
-                  <Button variant="contained" color="primary" onClick={() => buyCourse(course)}>Buy</Button>
+                  <Button variant="contained" color="primary" onClick={() => buyCourse(course)}>Enroll</Button>
                 </Item>
               </Grid>
             ))}
@@ -243,7 +246,7 @@ function App() {
               An online non-credit course authorized by Coursera and offered by {myCertificate.issuerName}
             </Typography>
             {Number.parseInt(myCertificate.expireTs) ? <Typography variant="subtitle1" color="text.secondary">Valid Until: {new Date(Number.parseInt(myCertificate.expireTs)).toDateString()} </Typography> : null}
-            {!myCertificate.verified && <Typography variant="h6" color="text.secondary" style={{ textAlign: 'right' }}>Unverified</Typography>}
+            <Typography variant="subtitle1" color="text.secondary" style={{ textAlign: 'right' }}>{!myCertificate.verified ? "Unverified" : `Certificate ID: ${myCertificate.id}`}</Typography>
           </CardContent>
         </Card>
 
@@ -255,7 +258,7 @@ function App() {
 
       <Container maxWidth="lg" sx={{ mb: 4 }}>
         <Grid container spacing={3}>
-          {myCertificates.map((certificate, index) => (
+          {myCertificates.map((certificate, index) => (certificate &&
             <Grid item xs={6}>
               <Item>
                 <Typography variant="h5">Course: {certificate.courseTitle}</Typography>
@@ -282,23 +285,66 @@ function App() {
       <Container maxWidth="lg" sx={{ mb: 4 }}>
         <Grid container spacing={3}>
           {unapproved.map((certificate, index) => (
-            <Grid item xs={6}>
+            <Grid item xs={12}>
               <Item>
-                <Typography variant="h4">Owner: {certificate.ownerName}</Typography>
+                <Typography variant="h6">Owner: {certificate.ownerName}</Typography>
                 <Typography variant="body1">Owner ID: {certificate.owner}</Typography>
-                <Typography variant="h5">Course: {certificate.courseTitle}</Typography>
+                <Typography variant="h6">Course: {certificate.courseTitle}</Typography>
                 <Typography variant="body1">Offered By: {certificate.issuerName}</Typography>
                 <Typography variant="body1">Status: {certificate.verified ? 'Verified' : 'Unverified'}</Typography>
                 <Typography variant="body1" sx={{ mb: 2 }}>Expire: {new Date(Number.parseInt(certificate.expireTs)).toDateString()}</Typography>
 
-                <Button variant="contained" color="success" size='small' onClick={() => setMyCertificate(certificate)}>View</Button>
-                {Number.parseInt(certificate.expireTs) ?
-                  <Button variant="outlined" color="primary" size='small' onClick={() => { }} sx={{ ml: 2 }}>Renew Certificate</Button>
-                  : null}
+                <Button variant="contained" color="success" size='small' onClick={() => approveCertificate(certificate)}>Approve</Button>
               </Item>
             </Grid>
           ))}
         </Grid>
+      </Container>
+    </>
+  } else if (page == 'verify') {
+    content = <>
+      <Container maxWidth="sm" sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ mt: 3, mb: 2 }}>Certificate Verification Portal</Typography>
+        <Box
+          component="form"
+          noValidate
+          autoComplete="off"
+        >
+          <TextField
+            label="Certificate ID"
+            size="small"
+            sx={{ my: 2 }}
+            value={verCertId}
+            onChange={e => { setVerCertId(e.target.value) }}
+          />
+
+          <TextField
+            label="Owner Name"
+            size="small"
+            sx={{ my: 2 }}
+            fullWidth
+            value={verOwnerName}
+            onChange={e => { setVerOwnerName(e.target.value) }}
+          />
+
+          <TextField
+            label="Issuer Name"
+            size="small"
+            sx={{ my: 2 }}
+            fullWidth
+            value={verIssuerName}
+            onChange={e => { setVerIssuerName(e.target.value) }}
+          />
+
+          <Button variant="contained" color="success" sx={{ width: '100%', my: 2 }} onClick={() => {
+            registerSol.methods.checkVerified(verCertId, verOwnerName, verIssuerName).call()
+              .then(isVerified => { setVerVerified((isVerified ? 'Verified' : 'Unverified') + ' Certificate') })
+          }}>Verify</Button>
+
+        </Box>
+
+        <Typography variant="h4" sx={{ mt: 3, mb: 2, textAlign: 'center' }} color='primary'>{verVerified}</Typography>
+
       </Container>
     </>
   }
@@ -312,7 +358,7 @@ function App() {
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               BeeCertify
             </Typography>
-            { page !== 'approve' &&
+            {page !== 'approve' &&
               <>
                 <Button color={"inherit"} variant={page === "courses" && "outlined"} onClick={() => setPage('courses')}>Courses</Button>
                 <Button color={"inherit"} variant={page === "certificates" && "outlined"} onClick={() => setPage('certificates')}>My Certificates</Button>
@@ -329,84 +375,8 @@ function App() {
 
         <Container maxWidth="md">
 
-          {/* <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 2, sm: 3, md: 12 }}
-          style={{ marginBottom: "20px" }}>
-          {properties && properties.map((item, index) => item.owner !== account && (
-            <Grid item xs={2} sm={4} md={4} key={index}>
-              <Item>
-                <Typography variant="h6" gutterBottom component="div">
-                  Property #{item.id}
-                </Typography>
-                Price: {item.price} <br/>
-                Location: {item.location} <br/>
-                Size: {item.size} <br/>
-                {item.available && 
-                <Button variant="outlined" size="small" onClick={() => buyProperty(item.id, item.price)}>
-                  Buy
-                </Button>}
-              </Item>
-            </Grid>
-          ))}
-        </Grid> */}
-
           {content}
 
-          {/* <Typography variant="h4" gutterBottom component="div">
-          Owned Properties
-        </Typography>
-        <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }}
-          style={{ marginBottom: "20px" }}>
-          {properties && properties.map((item, index) => item.owner === account && 
-            (<Grid item xs={2} sm={4} md={4} key={index}>
-              <Item>
-                <Typography variant="h6" gutterBottom component="div">
-                  Property #{item.id}
-                </Typography>
-                Price: {item.price} <br/>
-                Location: {item.location} <br/>
-                Size: {item.size} <br/>
-                {item.available ? 
-                <Button variant="outlined" size="small" onClick={() => setPropertyAvailability(item.id, false)}>
-                  Available
-                </Button>: 
-                <Button variant="outlined" color="error" size="small" onClick={() => setPropertyAvailability(item.id, true)}>
-                  Unavailable
-              </Button>}
-              </Item>
-            </Grid>
-          ))}
-        </Grid>
-
-        <Typography variant="h4" gutterBottom component="div">
-          Purchases
-        </Typography>
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
-            <TableHead>
-              <TableRow>
-                <TableCell>Property Id</TableCell>
-                <TableCell align="right">Buyer</TableCell>
-                <TableCell align="right">Owner</TableCell>
-                <TableCell align="right">Price</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {purchases && purchases.map((item) => (
-                <TableRow
-                  key={item.pid}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell component="th" scope="row">
-                    {item.pid}
-                  </TableCell>
-                  <TableCell align="right">{item.buyer.substring(0, 15)}...</TableCell>
-                  <TableCell align="right">{item.owner.substring(0, 15)}...</TableCell>
-                  <TableCell align="right">{item.price}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer> */}
         </Container>
       </Box>
     </div>
