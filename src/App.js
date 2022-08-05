@@ -153,7 +153,6 @@ function App() {
   }
 
   const buyCourse = async (course) => {
-    // TODO : Pay Surity for the course
     const loadId = toast.loading('Paying surity and enrolling course...');
     console.log(course.surity);
     console.log(course.issuer);
