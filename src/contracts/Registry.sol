@@ -146,7 +146,31 @@ contract Registry {
     }
 
 
+    struct StackInfo{
+        address studentAccount;
+        string courseTitle;
+        uint surity;
+        uint expireTs;
+    }
 
+    mapping(address => StackInfo[]) stakes; // stake sender, stacks
+    address[] studentAcconts;
+
+    function addSurity(string memory courseTitle, address payable receiver, uint expireTs) public payable{
+        require(msg.value>=0, "Invalid amount");
+        StackInfo memory si = StackInfo(msg.sender, courseTitle, msg.value, expireTs);
+        stakes[msg.sender].push(si);
+        receiver.transfer(msg.value);
+    }
+
+    function getStackInfo() public view returns (StackInfo[] memory){
+        return stakes[msg.sender];
+    }
+
+    function refund(address payable receiver) public payable {
+        require(msg.value>=0, "Invalid amount");
+        receiver.transfer(msg.value);
+    }
 
      
 }

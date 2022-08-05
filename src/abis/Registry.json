@@ -35,6 +35,42 @@
     {
         "inputs": [
             {
+                "internalType": "string",
+                "name": "courseTitle",
+                "type": "string"
+            },
+            {
+                "internalType": "address payable",
+                "name": "receiver",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "expireTs",
+                "type": "uint256"
+            }
+        ],
+        "name": "addSurity",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address payable",
+                "name": "receiver",
+                "type": "address"
+            }
+        ],
+        "name": "refund",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "address",
                 "name": "_certContract",
                 "type": "address"
@@ -194,6 +230,41 @@
                     }
                 ],
                 "internalType": "struct Registry.CertificateInfo[]",
+                "name": "",
+                "type": "tuple[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getStackInfo",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "address",
+                        "name": "studentAccount",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "courseTitle",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "surity",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "expireTs",
+                        "type": "uint256"
+                    }
+                ],
+                "internalType": "struct Registry.StackInfo[]",
                 "name": "",
                 "type": "tuple[]"
             }

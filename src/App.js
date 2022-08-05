@@ -17,8 +17,10 @@ import Web3 from "web3";
 import { useState } from 'react';
 import registerAbi from "./abis/Registry.json";
 import certifyAbi from "./abis/Certificate.json";
+//import stakingAbi from "./abis/Staking.json"
 import env from "react-dotenv";
 import { Card, CardContent, CardMedia, TextField } from '@mui/material';
+import toast, { Toaster } from 'react-hot-toast';
 
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -29,7 +31,7 @@ const Item = styled(Paper)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-let certificateSol, registerSol;
+let certificateSol, registerSol //, stakingSol;
 
 function App() {
 
@@ -53,6 +55,13 @@ function App() {
     surity: 0,
     issuer: "0xc87bfce1697950331d60F6B141eA912A958A2024",
     issuer_name: "BUET",
+  },
+  {
+    title: "Etherium",
+    description: "Learn Blockchain",
+    surity: 0,
+    issuer: "0xc87bfce1697950331d60F6B141eA912A958A2024",
+    issuer_name: "BUET",
   }
   ]);
 
@@ -70,7 +79,7 @@ function App() {
   const [verIssuerName, setVerIssuerName] = useState("")
   const [verVerified, setVerVerified] = useState("")
 
-  const [page, setPage] = useState("verify");
+  const [page, setPage] = useState("courses");
 
   const loadWeb3 = async () => {
     if (typeof window.ethereum !== "undefined") {
@@ -80,6 +89,7 @@ function App() {
         await window.ethereum.enable();
       }
       catch (error) {
+        toast.error(error.message)
         console.log(error);
       }
 
@@ -94,6 +104,7 @@ function App() {
         }
       }
       else {
+        toast.error('Please login with metamask')
         console.log("Please login with metamask")
       }
 
@@ -101,12 +112,13 @@ function App() {
         // Access smart contracts
         //console.log(env.PROPERTY_CONTRACT_ADDRESS)
         //console.log(env.REGISTRY_CONTRACT_ADDRESS);
-        certificateSol = new web3.eth.Contract(certifyAbi, env.PROPERTY_CONTRACT_ADDRESS);
+        certificateSol = new web3.eth.Contract(certifyAbi, env.CERTIFICATE_CONTRACT_ADDRESS);
         registerSol = new web3.eth.Contract(registerAbi, env.REGISTRY_CONTRACT_ADDRESS);
-
+        // stakingSol = new web3.eth.Contract(stakingAbi, env.STAKING_CONTRACT_ADDRESS)
         getInitialData();
       }
       catch (e) {
+        toast.error("Error loading smart contract: " + e.message)
         console.log("Error loading smart contract: " + e);
       }
     }
@@ -119,15 +131,16 @@ function App() {
     // Get list of properties & purchases
     try {
       let wMyCertificates = await registerSol.methods.getCertificates().call();
-      console.log(wMyCertificates)
+      // console.log(wMyCertificates)
       // if (wMyCertificates.length === 1 && wMyCertificates[0].ownerName === "")
       //   throw new Error("list empty");
       setMyCertificates(wMyCertificates.filter(c => c.owner === account));
       setUnapproved(wMyCertificates.filter(c => !c.verified && c.ownerName !== ""))
-      const titles = myCertificates.map(c => c.courseTitle)
+      const titles = myCertificates.map(c => c && c.courseTitle)
       setCourses(courses.filter(c => !(titles.includes(c.title))))
-      console.log(wMyCertificates);
+      // console.log(wMyCertificates);
     } catch (e) {
+      toast.error(e.message)
       console.log(e.message);
     }
 
@@ -140,31 +153,59 @@ function App() {
   }
 
   const buyCourse = async (course) => {
-    setCourses(courses.filter(item => item.title !== course.title || item.issuer !== course.issuer));
-    setMyCourses([...myCourses, course]);
     // TODO : Pay Surity for the course
+    const loadId = toast.loading('Paying surity and enrolling course...');
+    console.log(course.surity);
+    console.log(course.issuer);
+    await registerSol.methods.addSurity(course.title, course.issuer, course.expireTs || new Date().getTime() + 30 * 24 * 60 * 60 * 1000)
+      .send({ from: account, value: course.surity, gas: 1e6 })
+      .then(d => {
+        toast.dismiss(loadId); toast.success('Surity payment successful');
+        setCourses(courses.filter(item => item.title !== course.title || item.issuer !== course.issuer));
+        setMyCourses([...myCourses, course]);
+      })
+      .catch(e => { toast.dismiss(); toast.error('Error paying surity'); console.log(e) })
   }
 
   const finishCourse = async (course) => {
-    await registerSol.methods.addCertifcate(course.issuer, course.title, "Masum", course.issuer_name, new Date().getTime() + 30 * 24 * 60 * 60 * 1000)
+    const loadId = toast.loading('Applying for certificate...')
+    await registerSol.methods.addCertifcate(course.issuer, course.title, "Masum", course.issuer_name, course.expireTs || new Date().getTime() + 30 * 24 * 60 * 60 * 1000)
       .send({ from: account, gas: 1e6 })
-      .then(console.log)
-    setMyCourses(myCourses.filter(c => c.title != course.title || c.issuer != course.issuer))
-    setMyCertificates(myCertificates.filter(c => c.issuer != course.issuer || c.title != course.title));
+      .then(() => { toast.dismiss(loadId); toast.success('Applied for certificate') })
+      .catch(e => { toast.dismiss(); toast.error('Error appling for certificate') })
+    setMyCourses(myCourses.filter(c => c.title !== course.title || c.issuer !== course.issuer))
+    setMyCertificates(myCertificates.filter(c => c.issuer !== course.issuer || c.title !== course.title));
   }
 
   const deadlineReached = async (course) => {
-
+    // TODO : 
   }
 
   const extendDeadline = async (course) => {
-
+    // TODO : 
   }
 
   const approveCertificate = async (cert) => {
+    const loadId = toast.loading('Approving Certificate...')
     await registerSol.methods.verify(cert.id)
       .send({ from: account, gas: 1e6 })
-      .then(console.log)
+      .then(() => { toast.dismiss(loadId); toast.success('Certificate Approved') })
+      .catch(e => {
+        toast.dismiss(); toast.error('Error approving certificate');
+        throw new Error('Error approving certificate')
+      })
+
+    let surityAmount = 0;
+
+    for (let i = 0; i < courses.length; i++)
+      if (courses[i].title === cert.courseTitle && courses[i].issuer === cert.issuer)
+        surityAmount = courses[i].surity
+
+    const loadID = toast.loading('Refunding surity...')
+    await registerSol.methods.refund(cert.owner)
+      .send({ from: account, gas: 1e6, value: surityAmount })
+      .then(() => { toast.dismiss(loadID); toast.success('Surity refunded') })
+      .catch(e => { toast.dismiss(); toast.error('Surity can not be refunded') })
   }
 
   loadWeb3();
@@ -229,24 +270,24 @@ function App() {
             image="https://149396518.v2.pressablecdn.com/wp-content/uploads/2018/08/coursera-social-logo.png"
             alt="green iguana"
           />
-          <CardContent>
+          <CardContent sx={{ p: 4 }}>
             <Typography gutterBottom variant="h3" component="div" style={{ textAlign: 'right' }} color="text.secondary">
               {myCertificate.issuerName}
             </Typography>
-            <Typography gutterBottom variant="h2" component="div">
+            <Typography gutterBottom variant="h2" component="div" sx={{ ml: 2 }}>
               {myCertificate.ownerName}
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
               has successfully completed
             </Typography>
-            <Typography gutterBottom variant="h2" component="div">
+            <Typography gutterBottom variant="h2" component="div" sx={{ ml: 2 }}>
               {myCertificate.courseTitle}
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
               An online non-credit course authorized by Coursera and offered by {myCertificate.issuerName}
             </Typography>
             {Number.parseInt(myCertificate.expireTs) ? <Typography variant="subtitle1" color="text.secondary">Valid Until: {new Date(Number.parseInt(myCertificate.expireTs)).toDateString()} </Typography> : null}
-            <Typography variant="subtitle1" color="text.secondary" style={{ textAlign: 'right' }}>{!myCertificate.verified ? "Unverified" : `Certificate ID: ${myCertificate.id}`}</Typography>
+            <Typography variant="subtitle1" color={myCertificate.verified ? "success" : "warning"} style={{ textAlign: 'right' }}>{!myCertificate.verified ? "Unverified" : `Certificate ID: ${myCertificate.id}`}</Typography>
           </CardContent>
         </Card>
 
@@ -264,7 +305,7 @@ function App() {
                 <Typography variant="h5">Course: {certificate.courseTitle}</Typography>
                 <Typography variant="body1">Offered By: {certificate.issuerName}</Typography>
                 <Typography variant="body1">Status: {certificate.verified ? 'Verified' : 'Unverified'}</Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>Expire: {new Date(Number.parseInt(certificate.expireTs)).toDateString()}</Typography>
+                {Number.parseInt(certificate.expireTs) ? <Typography variant="body1" sx={{ mb: 2 }}>Expire: {new Date(Number.parseInt(certificate.expireTs)).toDateString()}</Typography> : null}
 
                 <Button variant="contained" color="success" size='small' onClick={() => setMyCertificate(certificate)}>View</Button>
                 {Number.parseInt(certificate.expireTs) ?
@@ -301,7 +342,7 @@ function App() {
         </Grid>
       </Container>
     </>
-  } else if (page == 'verify') {
+  } else if (page === 'verify') {
     content = <>
       <Container maxWidth="sm" sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ mt: 3, mb: 2 }}>Certificate Verification Portal</Typography>
@@ -339,6 +380,7 @@ function App() {
           <Button variant="contained" color="success" sx={{ width: '100%', my: 2 }} onClick={() => {
             registerSol.methods.checkVerified(verCertId, verOwnerName, verIssuerName).call()
               .then(isVerified => { setVerVerified((isVerified ? 'Verified' : 'Unverified') + ' Certificate') })
+              .catch(e => { toast.dismiss(); toast.error('Error verifying certificate') })
           }}>Verify</Button>
 
         </Box>
@@ -379,6 +421,7 @@ function App() {
 
         </Container>
       </Box>
+      <Toaster position="bottom-left" />
     </div>
   );
 }
