@@ -34,15 +34,15 @@ REGISTRY_CONTRACT_ADDRESS=<here>
 - Run `npm start` to run server and visit http://locahost:3000/
 - Should get prompted by metamask to connect to the website. Accept it and you're good to go!
 
+## Architecture
+![](./image/Diagram-Page-2.png)
+![](./image/Diagram-Page-3.jpg)
+
 ## Frontend Demo
 
 ![](./image/front1.jpg)
 ![](./image/front2.jpg)
 ![](./image/front3.jpg)
 ![](./image/front4.jpg)
-
-## Architecture
-![](./image/Diagram-Page-2.png)
-![](./image/Diagram-Page-3.jpg)
 
 
